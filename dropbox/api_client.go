@@ -8,12 +8,21 @@ import (
 	"time"
 )
 
+const (
+	AuthenticationEndpoint = "https://api.dropbox.com"
+)
+
+const ServiceAPIVersion = "2"
+
 type Client struct {
-	HTTPClient HTTPClient
+	AuthenticationEndpoint string
+	ContentUploadEndpoint  string
+	HTTPClient             HTTPClient
 }
 
 func New(opts ...Option) *Client {
 	cli := &Client{
+		AuthenticationEndpoint: AuthenticationEndpoint,
 		HTTPClient: &http.Client{
 			Timeout: 5 * time.Second,
 		},

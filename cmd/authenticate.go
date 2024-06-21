@@ -161,10 +161,10 @@ type Credentials struct {
 }
 
 func writeCredentials(out io.Writer, c *Credentials) error {
-	credentialsTmpl := `client-id="{{.ClientID}}"
-client-secret="{{.ClientSecret}}"
-access-token="{{.AccessToken}}"
-refresh-token="{{ .RefreshToken}}"
+	credentialsTmpl := `dropbox-client-id="{{.ClientID}}"
+dropbox-client-secret="{{.ClientSecret}}"
+dropbox-access-token="{{.AccessToken}}"
+dropbox-refresh-token="{{.RefreshToken}}"
 `
 	tmpl, _ := template.New("").Parse(credentialsTmpl)
 

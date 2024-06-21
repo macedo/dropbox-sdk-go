@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,17 +40,15 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		fmt.Println(filepath.Join(home, ".dropbox"))
-
 		viper.AddConfigPath(filepath.Join(home, ".dropbox"))
-		viper.SetConfigType("toml")
 		viper.SetConfigName("config")
 	}
 
+	viper.SetConfigType("toml")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatal(fmt.Errorf("failed to read config file: %v", err))
 	}
 }

@@ -20,7 +20,7 @@ func (c *Client) OAuth2Token(params *OAuth2TokenInput) (*OAuth2TokenOutput, erro
 		return nil, err
 	}
 
-	tokenURL, _ := url.Parse(c.AuthenticationEndpoint)
+	tokenURL, _ := url.Parse(AuthenticationEndpoint)
 	tokenURL.Path = "/oauth2/token"
 
 	request, err := http.NewRequest(
@@ -32,14 +32,14 @@ func (c *Client) OAuth2Token(params *OAuth2TokenInput) (*OAuth2TokenOutput, erro
 		return nil, err
 	}
 
+	request.Header.Set("Authorization", c.basicAuth())
+
 	err = c.sendRequest(request, &out)
 
 	return &out, err
 }
 
 type OAuth2TokenInput struct {
-	ClientID          string `schema:"client_id,omitempty"`
-	ClientSecret      string `schema:"client_secret,omitempty"`
 	Code              string `schema:"code,omitempty"`
 	CodeChallenge     string `schema:"code_challenge,omitempty"`
 	CodeVerifier      string `schema:"code_verifier,omitempty"`

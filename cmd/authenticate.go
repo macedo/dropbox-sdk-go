@@ -10,11 +10,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"text/template"
 	"time"
 
 	"github.com/cli/browser"
 	"github.com/macedo/dropbox-sdk-go/dropbox"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/term"
@@ -50,7 +50,7 @@ func authenticateAction(w io.Writer) error {
 
 	authorizeURL, _ := url.Parse("https://www.dropbox.com/oauth2/authorize")
 	query := authorizeURL.Query()
-	query.Add("client_id", viper.GetString("client-id"))
+	query.Add("client_id", viper.GetString("dropbox-app-key"))
 	query.Add("redirect_uri", redirectURI)
 	query.Add("response_type", "code")
 	query.Add("token_access_type", "offline")
@@ -65,26 +65,29 @@ func authenticateAction(w io.Writer) error {
 
 	select {
 	case code := <-codeCh:
-		cli := dropbox.New()
+		cli, err := dropbox.New(
+			dropbox.WithCredentialsPath(viper.ConfigFileUsed()),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create new dropbox client: %v", err)
+		}
 		out, err := cli.OAuth2Token(&dropbox.OAuth2TokenInput{
-			ClientID:     viper.GetString("client-id"),
-			ClientSecret: viper.GetString("client-secret"),
-			Code:         code,
-			GrantType:    "authorization_code",
-			RedirectURI:  redirectURI,
+			Code:        code,
+			GrantType:   "authorization_code",
+			RedirectURI: redirectURI,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to get acess token from dropbox: %v", err)
 		}
 
-		f, err := os.Create(viper.ConfigFileUsed())
+		f, err := os.Create(cli.CredentialsPath())
 		if err != nil {
 			return nil
 		}
 
-		if err := writeCredentials(f, &Credentials{
-			ClientID:     viper.GetString("client-id"),
-			ClientSecret: viper.GetString("client-secret"),
+		if err := toml.NewEncoder(f).Encode(&dropbox.Credentials{
+			AppKey:       viper.GetString("dropbox-app-key"),
+			AppSecret:    viper.GetString("dropbox-app-secret"),
 			AccessToken:  out.AccessToken,
 			RefreshToken: out.RefreshToken,
 		}); err != nil {
@@ -153,33 +156,15 @@ func startServer(ctx context.Context, codeCh chan<- string, errCh chan<- error, 
 	}()
 }
 
-type Credentials struct {
-	ClientID     string
-	ClientSecret string
-	AccessToken  string
-	RefreshToken string
-}
-
-func writeCredentials(out io.Writer, c *Credentials) error {
-	credentialsTmpl := `dropbox-client-id="{{.ClientID}}"
-dropbox-client-secret="{{.ClientSecret}}"
-dropbox-access-token="{{.AccessToken}}"
-dropbox-refresh-token="{{.RefreshToken}}"
-`
-	tmpl, _ := template.New("").Parse(credentialsTmpl)
-
-	return tmpl.Execute(out, c)
-}
-
 func init() {
 	browser.Stdout = nil
 	browser.Stderr = nil
 
-	authorizeCmd.PersistentFlags().String("client-id", "", "dropbox application client id")
-	viper.BindPFlag("client-id", authorizeCmd.PersistentFlags().Lookup("client-id"))
+	authorizeCmd.PersistentFlags().String("dropbox-app-key", "", "dropbox application key")
+	viper.BindPFlag("dropbox-app-key", authorizeCmd.PersistentFlags().Lookup("dropbox-app-key"))
 
-	authorizeCmd.PersistentFlags().String("client-secret", "", "dropbox application client secret")
-	viper.BindPFlag("client-secret", authorizeCmd.PersistentFlags().Lookup("client-secret"))
+	authorizeCmd.PersistentFlags().String("dropbox-app-secret", "", "dropbox application secret")
+	viper.BindPFlag("dropbox-app-secret", authorizeCmd.PersistentFlags().Lookup("dropbox-app-secret"))
 
 	authorizeCmd.PersistentFlags().String("port", "8080", "listening port for redirect uri server")
 	viper.BindPFlag("port", authorizeCmd.PersistentFlags().Lookup("port"))

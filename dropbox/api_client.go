@@ -58,6 +58,10 @@ func (c *Client) basicAuth() string {
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
+func (c *Client) bearerAuth() string {
+	return "Bearer " + c.Credentials.AccessToken
+}
+
 func (c *Client) parseOptions(opts ...Option) {
 	for _, option := range opts {
 		option(c)

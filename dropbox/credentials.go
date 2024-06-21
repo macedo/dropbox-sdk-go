@@ -25,13 +25,15 @@ type FileResolver struct {
 }
 
 func (r *FileResolver) load(c *Credentials) error {
-	f, err := os.ReadFile(r.path)
-	if err != nil {
-		return fmt.Errorf("failed to load credentials file %q: %v", r.path, err)
-	}
+	if r.path != "" {
+		f, err := os.ReadFile(r.path)
+		if err != nil {
+			return fmt.Errorf("failed to read credentials file %q: %v", r.path, err)
+		}
 
-	if err := toml.Unmarshal(f, c); err != nil {
-		return fmt.Errorf("failed to parse credentials file %q: %v", r.path, err)
+		if err := toml.Unmarshal(f, c); err != nil {
+			return fmt.Errorf("failed to parse credentials file %q: %v", r.path, err)
+		}
 	}
 
 	if r.next != nil {

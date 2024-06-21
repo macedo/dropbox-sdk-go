@@ -25,13 +25,15 @@ type Client struct {
 }
 
 func New(opts ...Option) (*Client, error) {
+	credentialsPath := ""
+
 	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
+	if err == nil {
+		credentialsPath = filepath.Join(home, ".dropbox", "config")
 	}
 
 	cli := &Client{
-		credentialsPath: filepath.Join(home, ".dropbox", "config"),
+		credentialsPath: credentialsPath,
 		HTTPClient: &http.Client{
 			Timeout: 5 * time.Second,
 		},

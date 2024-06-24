@@ -52,8 +52,8 @@ func authenticateAction(w io.Writer) error {
 	query := authorizeURL.Query()
 	query.Add("client_id", viper.GetString("dropbox-app-key"))
 	query.Add("redirect_uri", redirectURI)
-	query.Add("response_type", "code")
-	query.Add("token_access_type", "offline")
+	query.Add("response_type", dropbox.ResponseTypeCode)
+	query.Add("token_access_type", dropbox.TokenAccessTypeOffline)
 	authorizeURL.RawQuery = query.Encode()
 
 	fmt.Fprintf(w, "Opening browser to %s\n", authorizeURL)
@@ -73,7 +73,7 @@ func authenticateAction(w io.Writer) error {
 		}
 		out, err := cli.OAuth2Token(&dropbox.OAuth2TokenInput{
 			Code:        code,
-			GrantType:   "authorization_code",
+			GrantType:   dropbox.GrantTypeAuthorizationCode,
 			RedirectURI: redirectURI,
 		})
 		if err != nil {

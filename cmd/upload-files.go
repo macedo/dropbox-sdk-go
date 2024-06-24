@@ -63,7 +63,7 @@ func uploadFilesAction(w io.Writer, filenames []string) error {
 			out, err := cli.FilesUpload(&dropbox.FilesUploadInput{
 				Body: f,
 				UploadArg: &dropbox.UploadArg{
-					Mode: "overwrite",
+					Mode: dropbox.WriteModeOverwrite,
 					Mute: false,
 					Path: path,
 				},
